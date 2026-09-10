@@ -63,6 +63,16 @@ class IncidentAssignRequest(BaseModel):
     assigned_team: str
 
 
+class IncidentSyncRequest(BaseModel):
+    incident_id: str
+    latitude: float
+    longitude: float
+    description: str
+    image_key: str
+    incident_type: str = "flood"
+    severity_score: float = 0.90
+
+
 class IncidentStatusRequest(BaseModel):
     status: str  # unassigned | assigned | resolved
 
@@ -71,3 +81,4 @@ class StatsOut(BaseModel):
     total_incidents: int
     by_type: dict[str, int]
     by_status: dict[str, int]
+

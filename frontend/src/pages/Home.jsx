@@ -1,8 +1,11 @@
 import { Link } from "react-router-dom";
 import { Button, Card, Eyebrow } from "../components/ui";
 import SeverityBadge from "../components/SeverityBadge";
+import { useAuth } from "../context/AuthContext";
 
 export default function Home() {
+  const { user, logout } = useAuth();
+
   return (
     <div className="relative mx-auto max-w-page overflow-hidden px-6 pb-28 pt-6 sm:px-10">
       {/* Ambient background glow */}
@@ -33,12 +36,32 @@ export default function Home() {
           <Button as={Link} to="/report" variant="primary" className="py-3 px-6 shadow-md hover:shadow-lg transition-all">
             Report an Incident
           </Button>
-          <Button as={Link} to="/login" variant="ghost" className="py-3 px-6">
-            Citizen Portal
-          </Button>
-          <Button as={Link} to="/admin/login" variant="peach" className="py-3 px-6">
-            Admin Command Center
-          </Button>
+
+          {user ? (
+            <>
+              {user.role === "citizen" ? (
+                <Button as={Link} to="/my-reports" variant="ghost" className="py-3 px-6">
+                  My Reports
+                </Button>
+              ) : (
+                <Button as={Link} to="/admin" variant="peach" className="py-3 px-6">
+                  Command Center
+                </Button>
+              )}
+              <Button variant="ghost" onClick={logout} className="py-3 px-6 text-xs text-graphite hover:text-ink">
+                Log out ({user.email})
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button as={Link} to="/login" variant="ghost" className="py-3 px-6">
+                Citizen Portal
+              </Button>
+              <Button as={Link} to="/admin/login" variant="peach" className="py-3 px-6">
+                Admin Command Center
+              </Button>
+            </>
+          )}
         </div>
       </section>
 

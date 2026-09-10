@@ -1,21 +1,28 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button, Card, Field, Input } from "../../components/ui";
 import { useAuth } from "../../context/AuthContext";
 
 export default function AdminLogin() {
-  const { login } = useAuth();
+  const { user, login } = useAuth();
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
 
+  // Prevent visiting admin login while already authenticated as admin
+  useEffect(() => {
+    if (user?.role === "admin") {
+      navigate("/admin", { replace: true });
+    }
+  }, [user, navigate]);
+
   const onSubmit = async (e) => {
     e.preventDefault();
     setError("");
     try {
-      const user = await login(email, password);
-      if (user.role !== "admin") {
+      const loggedUser = await login(email, password);
+      if (loggedUser.role !== "admin") {
         setError("This account is not an admin.");
         return;
       }
@@ -72,10 +79,11 @@ export default function AdminLogin() {
             <Field label="Admin Email">
               <Input
                 type="email"
-                placeholder="admin@cloudrelief.local"
+                placeholder="Email Address"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 autoComplete="off"
+                className="placeholder:text-graphite/40 placeholder:font-normal"
                 required
               />
             </Field>
@@ -83,10 +91,11 @@ export default function AdminLogin() {
             <Field label="Password">
               <Input
                 type="password"
-                placeholder="••••••••"
+                placeholder="Password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 autoComplete="new-password"
+                className="placeholder:text-graphite/40 placeholder:font-normal"
                 required
               />
             </Field>

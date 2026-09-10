@@ -1,14 +1,21 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button, Field, Input } from "../../components/ui";
 import { useAuth } from "../../context/AuthContext";
 
 export default function CitizenLogin() {
-  const { login } = useAuth();
+  const { user, login } = useAuth();
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+
+  // Prevent visiting login while already authenticated
+  useEffect(() => {
+    if (user) {
+      navigate(user.role === "admin" ? "/admin" : "/report", { replace: true });
+    }
+  }, [user, navigate]);
 
   const onSubmit = async (e) => {
     e.preventDefault();
@@ -68,10 +75,11 @@ export default function CitizenLogin() {
             <Field label="Email">
               <Input
                 type="email"
-                placeholder="you@example.com"
+                placeholder="Email Address"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 autoComplete="off"
+                className="placeholder:text-graphite/40 placeholder:font-normal"
                 required
               />
             </Field>
@@ -79,10 +87,11 @@ export default function CitizenLogin() {
             <Field label="Password">
               <Input
                 type="password"
-                placeholder="••••••••"
+                placeholder="Password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 autoComplete="new-password"
+                className="placeholder:text-graphite/40 placeholder:font-normal"
                 required
               />
             </Field>

@@ -38,6 +38,8 @@ export default function Dashboard() {
     return () => clearInterval(id);
   }, []);
 
+  const [wiping, setWiping] = useState(false);
+
   const handleAssign = async (incidentId, team) => {
     await apiClient.patch(`/api/incidents/${incidentId}/assign`, { assigned_team: team });
     refresh();
@@ -48,17 +50,39 @@ export default function Dashboard() {
     refresh();
   };
 
+  const handleWipe = async () => {
+    if (!window.confirm("Wipe all mock reports and incidents from the command database?")) return;
+    setWiping(true);
+    try {
+      await apiClient.delete("/api/incidents/wipe");
+      setSelectedIncident(null);
+      await refresh();
+    } catch (err) {
+      setError(err.response?.data?.detail || "Failed to wipe incidents");
+    } finally {
+      setWiping(false);
+    }
+  };
+
   return (
     <div className="mx-auto max-w-page px-6 pb-20 sm:px-10">
-      <div className="mb-8 flex items-center justify-between">
+      <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-serif tracking-tight text-ink">Emergency Command Dashboard</h1>
           <p className="mt-1 text-xs text-graphite">
             Live operational view of reported disaster incidents, automated AI severity triage, and squad dispatches.
           </p>
         </div>
-        <div className="flex items-center gap-3 text-sm text-graphite">
-          <span className="hidden sm:inline font-mono text-xs">{user?.email}</span>
+        <div className="flex flex-wrap items-center gap-2 text-sm text-graphite">
+          <Button
+            variant="ghost"
+            onClick={handleWipe}
+            disabled={wiping}
+            className="text-xs py-1.5 px-3 text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
+          >
+            {wiping ? "Wiping..." : "🗑️ Wipe Mock Data"}
+          </Button>
+          <span className="hidden sm:inline font-mono text-xs text-graphite">{user?.email}</span>
           <Button variant="ghost" onClick={logout} className="text-xs py-1.5 px-3">
             Log out
           </Button>

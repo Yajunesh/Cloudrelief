@@ -7,12 +7,13 @@ from app.core.constants import MOCK_TEAMS
 from app.core.deps import get_current_user, require_admin
 from app.core.severity import compute_severity
 from app.db.session import get_db
-from app.models.db import Incident, IncidentStatus, IncidentType, User
+from app.models.db import Alert, Incident, IncidentStatus, IncidentType, User
 from app.models.schemas import (
     IncidentAssignRequest,
     IncidentCreateResponse,
     IncidentOut,
     IncidentStatusRequest,
+    IncidentSyncRequest,
     StatsOut,
 )
 from app.services.factory import get_classifier_service, get_notify_service, get_storage_service
@@ -22,7 +23,15 @@ router = APIRouter(prefix="/api/incidents", tags=["incidents"])
 
 def _to_out(incident: Incident) -> IncidentOut:
     storage = get_storage_service()
-    image_url = storage.get_file_url(incident.image_key) if incident.image_key else None
+    if incident.image_key and (incident.image_key.startswith("http://") or incident.image_key.startswith("https://")):
+        image_url = incident.image_key
+    elif incident.image_key and incident.image_key.startswith("incidents/"):
+        image_url = f"https://cloudrelief-images-hyderabad-2026.s3.ap-south-2.amazonaws.com/{incident.image_key}"
+    elif incident.image_key:
+        image_url = storage.get_file_url(incident.image_key)
+    else:
+        image_url = None
+
     return IncidentOut(
         incident_id=incident.incident_id,
         citizen_id=incident.citizen_id,
@@ -129,13 +138,67 @@ def my_incidents(db: Session = Depends(get_db), user: User = Depends(get_current
 
 @router.get("", response_model=list[IncidentOut])
 def list_incidents(db: Session = Depends(get_db), _admin: User = Depends(require_admin)):
-    rows = db.query(Incident).order_by(Incident.created_at.desc()).all()
+    # Only show incidents classed as genuine disasters (Flood, Fire, Structural Damage)
+    rows = (
+        db.query(Incident)
+        .filter(Incident.incident_type.in_([IncidentType.flood, IncidentType.fire, IncidentType.structural_damage]))
+        .order_by(Incident.created_at.desc())
+        .all()
+    )
     return [_to_out(r) for r in rows]
+
+
+@router.post("/sync", response_model=IncidentOut)
+def sync_aws_incident(
+    payload: IncidentSyncRequest,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    existing = db.query(Incident).filter(Incident.incident_id == payload.incident_id).first()
+    if existing:
+        return _to_out(existing)
+
+    try:
+        itype = IncidentType(payload.incident_type.lower())
+    except ValueError:
+        itype = IncidentType.flood
+
+    incident = Incident(
+        incident_id=payload.incident_id,
+        citizen_id=user.user_id,
+        latitude=payload.latitude,
+        longitude=payload.longitude,
+        description=payload.description,
+        incident_type=itype,
+        classifier_confidence=0.96,
+        severity_score=payload.severity_score,
+        status=IncidentStatus.unassigned,
+        image_key=payload.image_key,
+    )
+    db.add(incident)
+    db.commit()
+    db.refresh(incident)
+    return _to_out(incident)
+
+
+@router.delete("/wipe")
+def wipe_all_incidents(
+    db: Session = Depends(get_db),
+    _admin: User = Depends(require_admin),
+):
+    db.query(Alert).delete()
+    db.query(Incident).delete()
+    db.commit()
+    return {"message": "All mock incidents and reports have been completely wiped."}
 
 
 @router.get("/stats", response_model=StatsOut)
 def stats(db: Session = Depends(get_db), _admin: User = Depends(require_admin)):
-    rows = db.query(Incident).all()
+    rows = (
+        db.query(Incident)
+        .filter(Incident.incident_type.in_([IncidentType.flood, IncidentType.fire, IncidentType.structural_damage]))
+        .all()
+    )
     by_type: dict[str, int] = {}
     by_status: dict[str, int] = {}
     for r in rows:
@@ -162,6 +225,21 @@ def assign_incident(
 
     incident.assigned_team = payload.assigned_team
     incident.status = IncidentStatus.assigned
+
+    # Notify the citizen that the rescue squad has been deployed and is heading to the spot
+    notify = get_notify_service()
+    dispatch_message = (
+        f"🚨 RESCUE SQUAD DISPATCH: Unit '{payload.assigned_team}' has been dispatched and is currently "
+        f"heading to your reported incident location ({incident.latitude:.4f}, {incident.longitude:.4f}). "
+        f"Please stay in a safe location."
+    )
+    notify.publish_alert(
+        db,
+        incident_id=incident.incident_id,
+        severity_score=incident.severity_score,
+        message=dispatch_message,
+    )
+
     db.commit()
     db.refresh(incident)
     return _to_out(incident)
@@ -186,3 +264,4 @@ def set_status(
     db.commit()
     db.refresh(incident)
     return _to_out(incident)
+

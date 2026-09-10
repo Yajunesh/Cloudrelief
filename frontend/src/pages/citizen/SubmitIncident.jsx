@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import apiClient from "../../api/client";
 import { submitAwsIncident } from "../../api/awsIntake";
 import { Button, Card, Field, Input, TextArea } from "../../components/ui";
 
@@ -127,6 +128,21 @@ export default function SubmitIncident() {
     try {
       const data = await submitAwsIncident({ latitude, longitude, description, photo });
       setResult(data);
+
+      // Register with the incident dispatch database so it appears in the Admin Incident Triage
+      try {
+        await apiClient.post("/api/incidents/sync", {
+          incident_id: data.incidentId,
+          latitude: Number(latitude),
+          longitude: Number(longitude),
+          description,
+          image_key: `incidents/${data.incidentId}.jpg`,
+          incident_type: "flood",
+          severity_score: 0.96,
+        });
+      } catch (syncErr) {
+        console.warn("Backend sync notice:", syncErr);
+      }
 
       // Reset all form inputs and location state
       setDescription("");

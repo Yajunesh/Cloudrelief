@@ -6,8 +6,8 @@ import { useAuth } from "../../context/AuthContext";
 export default function CitizenLogin() {
   const { login } = useAuth();
   const navigate = useNavigate();
-  const [email, setEmail] = useState("citizen@cloudrelief.local");
-  const [password, setPassword] = useState("citizen12345");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState("");
 
   const onSubmit = async (e) => {
@@ -56,9 +56,7 @@ export default function CitizenLogin() {
           Register
         </Link>
       </p>
-      <p className="mt-3 text-center text-xs text-smoke">
-        Demo seed: citizen@cloudrelief.local / citizen12345
-      </p>
+
     </div>
   );
 }

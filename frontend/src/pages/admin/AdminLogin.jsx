@@ -6,8 +6,8 @@ import { useAuth } from "../../context/AuthContext";
 export default function AdminLogin() {
   const { login } = useAuth();
   const navigate = useNavigate();
-  const [email, setEmail] = useState("admin@cloudrelief.local");
-  const [password, setPassword] = useState("admin12345");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState("");
 
   const onSubmit = async (e) => {
@@ -54,9 +54,7 @@ export default function AdminLogin() {
           </Button>
         </form>
       </Card>
-      <p className="mt-3 text-center text-xs text-smoke">
-        Demo seed: admin@cloudrelief.local / admin12345
-      </p>
+
     </div>
   );
 }

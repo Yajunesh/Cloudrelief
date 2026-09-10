@@ -84,31 +84,35 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Metric Cards */}
+      {/* Disaster Categories & Scientific Methodology from Report */}
       <section className="relative mt-12 grid grid-cols-1 gap-5 sm:grid-cols-3">
         <Card className="shadow-float border border-ink/[0.08] hover:border-ink/20 transition-all">
-          <Eyebrow>Live incident triage</Eyebrow>
-          <p className="mt-2 font-serif text-xl text-ink">Flooding & High Water</p>
-          <p className="mt-1 text-xs text-graphite">Autonomous AWS Rekognition detection</p>
+          <Eyebrow>Disaster Categories</Eyebrow>
+          <p className="mt-2 font-serif text-xl text-ink">Flood • Fire • Structural</p>
+          <p className="mt-1 text-xs text-graphite">
+            Trained and tuned to detect acute natural and urban hazards: rising flood waters, active blazes, and structural building collapses.
+          </p>
           <div className="mt-4 flex items-center justify-between border-t border-ink/5 pt-3">
-            <span className="text-xs font-mono text-graphite">Recent activity</span>
+            <span className="text-xs font-mono text-graphite">Rekognition Vision AI</span>
             <SeverityBadge score={0.96} />
           </div>
         </Card>
 
         <Card accent className="shadow-float border border-sienna/20">
-          <Eyebrow className="text-sienna/70">Severity calculation</Eyebrow>
-          <p className="mt-2 font-serif text-xl">Photo + Keywords + Density</p>
-          <p className="mt-2 text-sm text-sienna/90 leading-relaxed">
-            Multi-factor algorithms convert citizen reports into instant actionable priority queues for response units.
+          <Eyebrow className="text-sienna/70">Severity scoring formula</Eyebrow>
+          <p className="mt-2 font-mono text-xs font-semibold text-sienna">
+            (AI × 0.5) + (Keywords × 0.25) + (Density × 0.25)
+          </p>
+          <p className="mt-2 text-xs text-sienna/90 leading-relaxed">
+            Multi-factor weighted algorithms automatically calculate severity from visual image features, urgent text signals, and geographic clustering.
           </p>
         </Card>
 
         <Card className="shadow-float border border-ink/[0.08] hover:border-ink/20 transition-all">
-          <Eyebrow>Dispatch acceleration</Eyebrow>
-          <p className="mt-2 font-serif text-4xl tracking-tighter text-ink">6.4x</p>
-          <p className="mt-2 text-sm text-graphite">
-            faster field team deployment compared to traditional manual call-center intake.
+          <Eyebrow>Dual-Track Architecture</Eyebrow>
+          <p className="mt-2 font-serif text-xl tracking-tight text-ink">AWS FaaS vs. VM IaaS</p>
+          <p className="mt-2 text-xs text-graphite leading-relaxed">
+            Empirical benchmarking under high-concurrency disaster loads (10 → 500 users) comparing latency, throughput, and operational costs.
           </p>
         </Card>
       </section>

@@ -64,13 +64,14 @@ export default function CitizenLogin() {
             </p>
           </div>
 
-          <form onSubmit={onSubmit} className="space-y-4">
+          <form onSubmit={onSubmit} className="space-y-4" autoComplete="off">
             <Field label="Email">
               <Input
                 type="email"
                 placeholder="you@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                autoComplete="off"
                 required
               />
             </Field>
@@ -81,6 +82,7 @@ export default function CitizenLogin() {
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                autoComplete="new-password"
                 required
               />
             </Field>

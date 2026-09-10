@@ -16,13 +16,13 @@ ADMIN_PASSWORD = "admin12345"
 CITIZEN_EMAIL = "citizen@cloudrelief.local"
 CITIZEN_PASSWORD = "citizen12345"
 
-# Roughly centered on downtown San Francisco, for a believable demo map.
+# Incidents aligned with project report specifications: Flood, Fire, and Structural Damage
 DEMO_INCIDENTS = [
-    (37.7749, -122.4194, "flood", "Street flooding near the intersection, water rising fast, help needed"),
-    (37.7849, -122.4094, "fire", "Fire spotted in an apartment building, people trapped on the 3rd floor"),
-    (37.7649, -122.4294, "structural_damage", "Building wall collapsed after the storm, blocking the road"),
-    (37.7799, -122.4144, "normal", "Minor pothole and debris on the sidewalk"),
-    (37.7699, -122.4244, "flood", "Basement flooding reported, water levels rising"),
+    (12.9728, 79.1645, "flood", "Severe flash flooding reported across main transit corridor, water rising rapidly above vehicle levels"),
+    (12.9685, 79.1562, "fire", "Commercial complex structural fire, heavy smoke plumes and trapped occupants on upper floors"),
+    (12.9792, 79.1718, "structural_damage", "Multi-story building facade and load-bearing wall collapsed following heavy rains, blocking rescue access"),
+    (12.9642, 79.1601, "flood", "Residential colony inundation, water level over 4 feet, evacuation assistance required"),
+    (12.9754, 79.1589, "fire", "Transformer explosion triggering rooftop and warehouse fire, emergency suppression required"),
 ]
 
 

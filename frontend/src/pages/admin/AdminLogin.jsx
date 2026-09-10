@@ -68,13 +68,14 @@ export default function AdminLogin() {
             </p>
           </div>
 
-          <form onSubmit={onSubmit} className="space-y-4">
+          <form onSubmit={onSubmit} className="space-y-4" autoComplete="off">
             <Field label="Admin Email">
               <Input
                 type="email"
                 placeholder="admin@cloudrelief.local"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                autoComplete="off"
                 required
               />
             </Field>
@@ -85,6 +86,7 @@ export default function AdminLogin() {
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                autoComplete="new-password"
                 required
               />
             </Field>

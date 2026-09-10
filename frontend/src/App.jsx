@@ -15,23 +15,53 @@ function TopBar() {
 
   return (
     <header className="mx-auto flex max-w-page flex-wrap items-center justify-between gap-x-4 gap-y-3 px-6 py-6 sm:px-10">
-      <Link to="/" className="font-serif text-xl tracking-tight text-ink">
+      <Link to="/" className="flex items-center gap-2 font-serif text-xl tracking-tight text-ink">
+        <span className="flex h-3 w-3 rounded-full bg-emerald-500 animate-pulse" />
         CloudRelief
       </Link>
 
-      {user?.role === "citizen" && (
-        <nav className="flex items-center gap-1 sm:gap-2">
-          <Button as={Link} to="/report" variant="quiet" className="px-2.5 sm:px-5">
-            Report
-          </Button>
-          <Button as={Link} to="/my-reports" variant="quiet" className="px-2.5 sm:px-5">
-            My Reports
-          </Button>
-          <Button variant="ghost" onClick={logout} className="px-3.5 sm:px-5">
-            Log out
-          </Button>
-        </nav>
-      )}
+      <nav className="flex items-center gap-1.5 sm:gap-2">
+        {user?.role === "citizen" ? (
+          <>
+            <Button as={Link} to="/report" variant="quiet" className="px-2.5 sm:px-4 text-xs sm:text-sm">
+              Report Incident
+            </Button>
+            <Button as={Link} to="/my-reports" variant="quiet" className="px-2.5 sm:px-4 text-xs sm:text-sm">
+              My Reports
+            </Button>
+            <span className="hidden sm:inline text-xs text-graphite font-mono px-1">
+              {user.email}
+            </span>
+            <Button variant="ghost" onClick={logout} className="px-3 sm:px-4 text-xs sm:text-sm">
+              Log out
+            </Button>
+          </>
+        ) : user?.role === "admin" ? (
+          <>
+            <Button as={Link} to="/admin" variant="peach" className="px-3 sm:px-4 text-xs sm:text-sm">
+              Command Dashboard
+            </Button>
+            <span className="hidden sm:inline text-xs text-graphite font-mono px-1">
+              {user.email}
+            </span>
+            <Button variant="ghost" onClick={logout} className="px-3 sm:px-4 text-xs sm:text-sm">
+              Log out
+            </Button>
+          </>
+        ) : (
+          <>
+            <Button as={Link} to="/report" variant="primary" className="px-3 sm:px-4 text-xs sm:text-sm">
+              Report Incident
+            </Button>
+            <Button as={Link} to="/login" variant="ghost" className="px-3 sm:px-4 text-xs sm:text-sm">
+              Citizen Login
+            </Button>
+            <Button as={Link} to="/admin/login" variant="quiet" className="px-2.5 sm:px-4 text-xs sm:text-sm">
+              Admin
+            </Button>
+          </>
+        )}
+      </nav>
     </header>
   );
 }

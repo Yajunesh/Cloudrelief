@@ -11,6 +11,7 @@ const POLL_INTERVAL_MS = 8000;
 export default function Dashboard() {
   const { user, logout } = useAuth();
   const [incidents, setIncidents] = useState([]);
+  const [selectedIncident, setSelectedIncident] = useState(null);
   const [stats, setStats] = useState(null);
   const [teams, setTeams] = useState([]);
   const [error, setError] = useState("");
@@ -33,8 +34,6 @@ export default function Dashboard() {
 
   useEffect(() => {
     refresh();
-    // Simple polling stands in for a live feed; swapping to WebSockets/SSE
-    // later would only touch this effect, not the child components.
     const id = setInterval(refresh, POLL_INTERVAL_MS);
     return () => clearInterval(id);
   }, []);
@@ -52,10 +51,15 @@ export default function Dashboard() {
   return (
     <div className="mx-auto max-w-page px-6 pb-20 sm:px-10">
       <div className="mb-8 flex items-center justify-between">
-        <h1 className="text-3xl tracking-tighter text-ink">Admin dashboard</h1>
+        <div>
+          <h1 className="text-3xl font-serif tracking-tight text-ink">Emergency Command Dashboard</h1>
+          <p className="mt-1 text-xs text-graphite">
+            Live operational view of reported disaster incidents, automated AI severity triage, and squad dispatches.
+          </p>
+        </div>
         <div className="flex items-center gap-3 text-sm text-graphite">
-          <span>{user?.email}</span>
-          <Button variant="ghost" onClick={logout}>
+          <span className="hidden sm:inline font-mono text-xs">{user?.email}</span>
+          <Button variant="ghost" onClick={logout} className="text-xs py-1.5 px-3">
             Log out
           </Button>
         </div>
@@ -67,13 +71,19 @@ export default function Dashboard() {
         <Stats stats={stats} />
       </div>
 
-      <div className="mb-6 overflow-hidden rounded-3xl border border-ink/[0.06]">
-        <IncidentMap incidents={incidents} />
+      <div className="mb-6 overflow-hidden rounded-3xl border border-ink/[0.06] shadow-sm">
+        <IncidentMap
+          incidents={incidents}
+          selectedIncident={selectedIncident}
+          onSelectIncident={setSelectedIncident}
+        />
       </div>
 
       <IncidentTable
         incidents={incidents}
         teams={teams}
+        selectedIncident={selectedIncident}
+        onSelectIncident={setSelectedIncident}
         onAssign={handleAssign}
         onStatusChange={handleStatusChange}
       />

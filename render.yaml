@@ -48,6 +48,8 @@ services:
     envVars:
       - key: VITE_API_URL
         sync: false
+      - key: VITE_AWS_INTAKE_API_URL
+        value: https://4jz5lyekei.execute-api.ap-south-2.amazonaws.com/dev
     routes:
       - type: rewrite
         source: /*

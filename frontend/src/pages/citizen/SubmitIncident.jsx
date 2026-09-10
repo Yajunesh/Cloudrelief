@@ -52,6 +52,10 @@ export default function SubmitIncident() {
       setError("Please attach a photo.");
       return;
     }
+    if (photo.type && photo.type !== "image/jpeg") {
+      setError("The current AWS intake pipeline accepts JPEG photos only. Please choose a .jpg or .jpeg image.");
+      return;
+    }
     setSubmitting(true);
     try {
       const data = await submitAwsIncident({ latitude, longitude, description, photo });
@@ -121,7 +125,7 @@ export default function SubmitIncident() {
             <input
               ref={cameraInputRef}
               type="file"
-              accept="image/*"
+              accept="image/jpeg,.jpg,.jpeg"
               capture="environment"
               className="hidden"
               onChange={(e) => setPhoto(e.target.files?.[0] || null)}
@@ -129,7 +133,7 @@ export default function SubmitIncident() {
             <input
               ref={fileInputRef}
               type="file"
-              accept="image/*"
+              accept="image/jpeg,.jpg,.jpeg"
               className="hidden"
               onChange={(e) => setPhoto(e.target.files?.[0] || null)}
             />

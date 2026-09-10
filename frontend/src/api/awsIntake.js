@@ -27,12 +27,15 @@ export async function submitAwsIncident({ latitude, longitude, description, phot
     throw new Error("AWS intake is not configured. Set VITE_AWS_INTAKE_API_URL before building the frontend.");
   }
 
+  // ReportHandler currently reads `lat` and `lng`, and signs its S3 PUT URL
+  // with ContentType=image/jpeg. Both values must match its contract exactly.
+  const signedContentType = "image/jpeg";
   const { data } = await awsIntakeClient.post("/reports", {
-    latitude: Number(latitude),
-    longitude: Number(longitude),
+    lat: Number(latitude),
+    lng: Number(longitude),
     description,
     filename: photo.name,
-    content_type: photo.type || "image/jpeg",
+    content_type: signedContentType,
   });
 
   const uploadUrl = readUploadUrl(data);
@@ -45,7 +48,7 @@ export async function submitAwsIncident({ latitude, longitude, description, phot
   // bearer token, which must never be sent to an S3 pre-signed URL.
   const uploadResponse = await fetch(uploadUrl, {
     method: "PUT",
-    headers: { "Content-Type": photo.type || "image/jpeg" },
+    headers: { "Content-Type": signedContentType },
     body: photo,
   });
   if (!uploadResponse.ok) {

@@ -59,7 +59,8 @@ export default function SubmitIncident() {
       setDescription("");
       setPhoto(null);
     } catch (err) {
-      setError(err.response?.data?.detail || "Submission failed");
+      const apiMessage = err.response?.data?.detail || err.response?.data?.message;
+      setError(apiMessage || err.message || "Submission failed");
     } finally {
       setSubmitting(false);
     }

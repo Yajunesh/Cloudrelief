@@ -119,6 +119,20 @@ npm run dev
 4. Admin logs in, sees the incident on the Leaflet map (colored by severity)
    and in the sortable table, assigns a team, and updates status.
 
+### AWS asynchronous intake
+
+The citizen report form can submit to the AWS API Gateway intake endpoint by
+setting `VITE_AWS_INTAKE_API_URL` when building the frontend. It performs two
+steps: `POST /reports` creates a DynamoDB incident record and returns an S3
+pre-signed URL; the browser then `PUT`s the image directly to that URL. The
+S3 event triggers asynchronous Rekognition classification and SNS alerts.
+
+The deployed ReportHandler response must include `incident_id` (or
+`incidentId`) and one of `upload_url`, `presigned_url`, or `presignedUrl`.
+The gateway currently supplies intake only; the existing FastAPI API still
+serves authentication, report history, and admin pages until equivalent AWS
+query/admin endpoints are deployed.
+
 ### Severity formula
 
 ```

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import apiClient from "../../api/client";
+import { submitAwsIncident } from "../../api/awsIntake";
 import { Button, Card, Field, Input, TextArea } from "../../components/ui";
 
 export default function SubmitIncident() {
@@ -54,15 +54,7 @@ export default function SubmitIncident() {
     }
     setSubmitting(true);
     try {
-      const form = new FormData();
-      form.append("latitude", latitude);
-      form.append("longitude", longitude);
-      form.append("description", description);
-      form.append("photo", photo);
-
-      const { data } = await apiClient.post("/api/incidents", form, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
+      const data = await submitAwsIncident({ latitude, longitude, description, photo });
       setResult(data);
       setDescription("");
       setPhoto(null);
@@ -191,13 +183,9 @@ export default function SubmitIncident() {
         <Card accent className="mt-4 shadow-float">
           <p className="font-serif text-lg">Report submitted</p>
           <ul className="mt-2 space-y-1 text-sm text-sienna/90">
-            <li>Detected type: {result.incident_type}</li>
-            <li>Classifier confidence: {result.classifier_confidence.toFixed(2)}</li>
-            <li>Severity score: {result.severity_score.toFixed(2)}</li>
-            <li>Status: {result.status}</li>
-            {result.alert_triggered && (
-              <li className="font-semibold">High severity — admins have been alerted.</li>
-            )}
+            <li>Report ID: {result.incidentId}</li>
+            <li>Photo uploaded securely. AI triage is now processing it.</li>
+            <li className="text-xs">Classification and any critical alert are handled asynchronously by AWS.</li>
           </ul>
         </Card>
       )}

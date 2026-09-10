@@ -4,53 +4,112 @@ import SeverityBadge from "../components/SeverityBadge";
 
 export default function Home() {
   return (
-    <div className="relative mx-auto max-w-page overflow-hidden px-6 pb-32 pt-8 sm:px-10">
-      <div className="pointer-events-none absolute -right-24 top-0 h-72 w-72 rounded-full bg-peach/60 blur-3xl" />
+    <div className="relative mx-auto max-w-page overflow-hidden px-6 pb-28 pt-6 sm:px-10">
+      {/* Ambient background glow */}
+      <div className="pointer-events-none absolute -right-24 top-0 h-96 w-96 rounded-full bg-peach/50 blur-3xl" />
+      <div className="pointer-events-none absolute -left-20 top-40 h-80 w-80 rounded-full bg-amber-100/40 blur-3xl" />
 
-      <section className="relative mx-auto max-w-2xl text-center">
-        <Eyebrow className="justify-center">Disaster response, simplified</Eyebrow>
-        <h1 className="mt-4 text-[44px] leading-[1.05] tracking-tighter text-ink sm:text-[64px]">
-          Every report,
+      {/* Main Hero Header */}
+      <section className="relative mx-auto max-w-3xl text-center">
+        <div className="inline-flex items-center gap-2 rounded-full border border-ink/10 bg-white/80 px-4 py-1.5 shadow-sm backdrop-blur-sm">
+          <span className="flex h-2 w-2 rounded-full bg-emerald-500 animate-ping" />
+          <Eyebrow className="text-[11px] tracking-wider text-ink font-semibold">
+            Next-Gen Disaster Response Network
+          </Eyebrow>
+        </div>
+
+        <h1 className="mt-5 text-[42px] leading-[1.06] tracking-tighter text-ink sm:text-[62px]">
+          Rapid incident triage,
           <br />
-          one shared map.
+          <span className="italic font-serif text-sienna">instant aid dispatch.</span>
         </h1>
-        <p className="mx-auto mt-5 max-w-md text-[15px] leading-relaxed text-graphite">
-          Citizens report incidents in seconds. CloudRelief scores severity from the
-          photo, the description, and what else is happening nearby&nbsp;&mdash; so admins
-          know what to act on first.
+
+        <p className="mx-auto mt-5 max-w-xl text-[16px] leading-relaxed text-graphite">
+          Citizens report emergencies in seconds with GPS and photos. CloudRelief leverages
+          cloud AI vision and real-time GIS mapping to triage severity and mobilize emergency crews first where needed most.
         </p>
-        <div className="mt-9 flex flex-wrap items-center justify-center gap-3">
-          <Button as={Link} to="/login" variant="primary">
+
+        <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+          <Button as={Link} to="/report" variant="primary" className="py-3 px-6 shadow-md hover:shadow-lg transition-all">
+            Report an Incident
+          </Button>
+          <Button as={Link} to="/login" variant="ghost" className="py-3 px-6">
             Citizen Portal
           </Button>
-          <Button as={Link} to="/admin/login" variant="ghost">
-            Admin Portal
+          <Button as={Link} to="/admin/login" variant="peach" className="py-3 px-6">
+            Admin Command Center
           </Button>
         </div>
       </section>
 
-      <section className="relative mt-20 grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <Card className="shadow-float">
-          <Eyebrow>Live incident</Eyebrow>
-          <p className="mt-3 font-serif text-lg text-ink">Flooding, Elm St.</p>
-          <div className="mt-3 flex items-center justify-between">
-            <span className="text-xs text-graphite">2 min ago</span>
-            <SeverityBadge score={0.78} />
+      {/* Visual Showcase with Generated Hero Image */}
+      <section className="relative mt-12 mx-auto max-w-5xl">
+        <div className="relative overflow-hidden rounded-3xl border border-ink/10 shadow-2xl bg-ink/5">
+          <img
+            src="/hero.jpg"
+            alt="CloudRelief Disaster Response Operations"
+            className="w-full h-[360px] sm:h-[480px] object-cover object-center transform hover:scale-[1.01] transition-transform duration-700"
+          />
+
+          {/* Gradient overlay */}
+          <div className="absolute inset-0 bg-gradient-to-t from-ink/80 via-ink/20 to-transparent pointer-events-none" />
+
+          {/* Floating Badges */}
+          <div className="absolute top-4 left-4 sm:top-6 sm:left-6 flex flex-wrap gap-2">
+            <span className="inline-flex items-center gap-2 rounded-full bg-ink/70 px-3.5 py-1.5 text-xs font-medium text-paper backdrop-blur-md border border-white/10">
+              <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+              Live GIS Telemetry
+            </span>
+            <span className="inline-flex items-center gap-2 rounded-full bg-ink/70 px-3.5 py-1.5 text-xs font-medium text-paper backdrop-blur-md border border-white/10">
+              ⚡ AWS Serverless AI Intake
+            </span>
+          </div>
+
+          <div className="absolute bottom-6 left-6 right-6 flex flex-col sm:flex-row items-start sm:items-end justify-between gap-4 text-paper">
+            <div>
+              <p className="text-xs font-mono uppercase tracking-wider text-amber-300">
+                Continuous Monitoring & Triage
+              </p>
+              <h2 className="text-xl sm:text-2xl font-serif text-white mt-0.5">
+                Autonomous Severity Scoring & Rescue Routing
+              </h2>
+            </div>
+            <Link
+              to="/report"
+              className="inline-flex items-center gap-1.5 rounded-full bg-white px-4 py-2 text-xs font-semibold text-ink shadow-sm hover:bg-mist transition-colors"
+            >
+              Submit Live Report →
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Metric Cards */}
+      <section className="relative mt-12 grid grid-cols-1 gap-5 sm:grid-cols-3">
+        <Card className="shadow-float border border-ink/[0.08] hover:border-ink/20 transition-all">
+          <Eyebrow>Live incident triage</Eyebrow>
+          <p className="mt-2 font-serif text-xl text-ink">Flooding & High Water</p>
+          <p className="mt-1 text-xs text-graphite">Autonomous AWS Rekognition detection</p>
+          <div className="mt-4 flex items-center justify-between border-t border-ink/5 pt-3">
+            <span className="text-xs font-mono text-graphite">Recent activity</span>
+            <SeverityBadge score={0.96} />
           </div>
         </Card>
 
-        <Card accent className="shadow-float">
-          <Eyebrow className="text-sienna/70">How it's scored</Eyebrow>
-          <p className="mt-3 font-serif text-lg">Photo + words + density</p>
-          <p className="mt-3 text-sm text-sienna/80">
-            One weighted formula turns a report into a number admins can triage by.
+        <Card accent className="shadow-float border border-sienna/20">
+          <Eyebrow className="text-sienna/70">Severity calculation</Eyebrow>
+          <p className="mt-2 font-serif text-xl">Photo + Keywords + Density</p>
+          <p className="mt-2 text-sm text-sienna/90 leading-relaxed">
+            Multi-factor algorithms convert citizen reports into instant actionable priority queues for response units.
           </p>
         </Card>
 
-        <Card className="shadow-float">
-          <Eyebrow>Response time</Eyebrow>
-          <p className="mt-3 font-serif text-4xl tracking-tighter text-ink">6.4x</p>
-          <p className="mt-2 text-sm text-graphite">faster team assignment vs. manual intake</p>
+        <Card className="shadow-float border border-ink/[0.08] hover:border-ink/20 transition-all">
+          <Eyebrow>Dispatch acceleration</Eyebrow>
+          <p className="mt-2 font-serif text-4xl tracking-tighter text-ink">6.4x</p>
+          <p className="mt-2 text-sm text-graphite">
+            faster field team deployment compared to traditional manual call-center intake.
+          </p>
         </Card>
       </section>
     </div>

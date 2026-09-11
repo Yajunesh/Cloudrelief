@@ -178,7 +178,38 @@ def sync_aws_incident(
     db.add(incident)
     db.commit()
     db.refresh(incident)
+
+    # Broadcast emergency disaster warning alert to all registered citizens if severe
+    if payload.severity_score >= 0.5:
+        notify = get_notify_service()
+        notify.publish_alert(
+            db,
+            incident_id=incident.incident_id,
+            severity_score=incident.severity_score,
+            message=(
+                f"⚠️ DISASTER WARNING: High-severity {itype.value.upper()} reported near "
+                f"({payload.latitude:.4f}, {payload.longitude:.4f}). "
+                f"AI Vision Triage confirmed acute hazard (Severity: {(payload.severity_score * 100):.1f}%). "
+                f"All registered citizens are alerted."
+            ),
+        )
+
     return _to_out(incident)
+
+
+@router.get("/alerts")
+def list_alerts(db: Session = Depends(get_db)):
+    alerts = db.query(Alert).order_by(Alert.created_at.desc()).limit(20).all()
+    return [
+        {
+            "alert_id": a.alert_id,
+            "incident_id": a.incident_id,
+            "severity_score": a.severity_score,
+            "message": a.message,
+            "created_at": a.created_at,
+        }
+        for a in alerts
+    ]
 
 
 @router.delete("/wipe")

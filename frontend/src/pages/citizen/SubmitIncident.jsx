@@ -129,6 +129,17 @@ export default function SubmitIncident() {
       const data = await submitAwsIncident({ latitude, longitude, description, photo });
       setResult(data);
 
+      // Infer correct disaster category (fire, flood, structural_damage)
+      const descLower = (description || "").toLowerCase();
+      let detectedType = "flood";
+      if (/(fire|flame|burn|smoke|blaze|wildfire|explosion|heat)/i.test(descLower)) {
+        detectedType = "fire";
+      } else if (/(collapse|crack|structural|building|wall|bridge|rubble|debris)/i.test(descLower)) {
+        detectedType = "structural_damage";
+      } else if (/(flood|water|rain|submerge|drown|overflow|river|inundat|storm)/i.test(descLower)) {
+        detectedType = "flood";
+      }
+
       // Register with the incident dispatch database so it appears in the Admin Incident Triage
       try {
         await apiClient.post("/api/incidents/sync", {
@@ -137,7 +148,7 @@ export default function SubmitIncident() {
           longitude: Number(longitude),
           description,
           image_key: `incidents/${data.incidentId}.jpg`,
-          incident_type: "flood",
+          incident_type: detectedType,
           severity_score: 0.96,
         });
       } catch (syncErr) {

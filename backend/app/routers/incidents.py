@@ -158,10 +158,18 @@ def sync_aws_incident(
     if existing:
         return _to_out(existing)
 
-    try:
-        itype = IncidentType(payload.incident_type.lower())
-    except ValueError:
+    desc = (payload.description or "").lower()
+    if any(k in desc for k in ["fire", "flame", "burn", "smoke", "blaze", "wildfire", "explosion"]):
+        itype = IncidentType.fire
+    elif any(k in desc for k in ["collapse", "crack", "structural", "building", "wall", "rubble", "debris"]):
+        itype = IncidentType.structural_damage
+    elif any(k in desc for k in ["flood", "water", "rain", "submerge", "overflow", "river", "inundat"]):
         itype = IncidentType.flood
+    else:
+        try:
+            itype = IncidentType(payload.incident_type.lower())
+        except ValueError:
+            itype = IncidentType.fire
 
     incident = Incident(
         incident_id=payload.incident_id,

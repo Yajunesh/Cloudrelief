@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button, Field, Input } from "../../components/ui";
 import { useAuth } from "../../context/AuthContext";
+import { subscribeAwsAlerts } from "../../api/awsIntake";
 
 export default function CitizenRegister() {
   const { register } = useAuth();
@@ -10,15 +11,25 @@ export default function CitizenRegister() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [subscribing, setSubscribing] = useState(false);
 
   const onSubmit = async (e) => {
     e.preventDefault();
     setError("");
+    setSubscribing(true);
     try {
       await register(email, password, fullName);
+      // Automatically request AWS SNS email subscription confirmation
+      try {
+        await subscribeAwsAlerts(email);
+      } catch (subErr) {
+        console.warn("Auto-subscribe to AWS SNS completed with warning:", subErr);
+      }
       navigate("/report");
     } catch (err) {
       setError(err.response?.data?.detail || "Registration failed");
+    } finally {
+      setSubscribing(false);
     }
   };
 

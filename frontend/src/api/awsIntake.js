@@ -57,3 +57,32 @@ export async function submitAwsIncident({ latitude, longitude, description, phot
 
   return { incidentId, intake: data };
 }
+
+export async function subscribeAwsAlerts(email) {
+  if (!AWS_INTAKE_API_URL || !email) return null;
+  try {
+    const { data } = await awsIntakeClient.post("/reports", {
+      action: "subscribe",
+      email: email.trim(),
+    });
+    return data;
+  } catch (err) {
+    console.warn("AWS SNS subscription request skipped/failed:", err);
+    return null;
+  }
+}
+
+export async function publishAwsAlert({ subject, message }) {
+  if (!AWS_INTAKE_API_URL) return null;
+  try {
+    const { data } = await awsIntakeClient.post("/reports", {
+      action: "publish",
+      subject: subject || "🚨 CloudRelief Emergency Alert",
+      message,
+    });
+    return data;
+  } catch (err) {
+    console.warn("AWS SNS broadcast publish failed:", err);
+    return null;
+  }
+}

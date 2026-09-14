@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import SeverityBadge from "../../components/SeverityBadge";
+import { publishAwsAlert } from "../../api/awsIntake";
 
 const STATUS_OPTIONS = ["unassigned", "assigned", "resolved"];
 
@@ -29,6 +30,23 @@ export default function IncidentTable({
       incidentId: incident.incident_id,
       location: `${Number(incident.latitude).toFixed(4)}°, ${Number(incident.longitude).toFixed(4)}°`,
     });
+
+    // Broadcast live email notification to all subscribed citizens via AWS SNS
+    try {
+      await publishAwsAlert({
+        subject: `🚨 RESCUE SQUAD DISPATCHED: Squad '${team}' En Route`,
+        message:
+          `Emergency Update: Rescue Unit '${team}' has been locked in and dispatched to your reported incident area ` +
+          `(${Number(incident.latitude).toFixed(4)}, ${Number(incident.longitude).toFixed(4)}).\n\n` +
+          `Incident Type: ${(incident.incident_type || "Disaster").toUpperCase()}\n` +
+          `Description: ${incident.description || "Active emergency zone"}\n` +
+          `Status: In Progress\n\n` +
+          `Please stay clear of hazardous areas and follow instructions from emergency personnel.`,
+      });
+    } catch (snsErr) {
+      console.warn("AWS SNS squad dispatch broadcast skipped:", snsErr);
+    }
+
     setTimeout(() => setDispatchAlert(null), 7000);
   };
 

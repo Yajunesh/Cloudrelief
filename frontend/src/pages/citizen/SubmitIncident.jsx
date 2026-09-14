@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import apiClient from "../../api/client";
-import { submitAwsIncident } from "../../api/awsIntake";
+import { submitAwsIncident, publishAwsAlert } from "../../api/awsIntake";
 import { Button, Card, Field, Input, TextArea } from "../../components/ui";
 
 // Automatically convert non-JPEG photos (PNG, WebP) to high-quality JPEG in browser
@@ -151,6 +151,21 @@ export default function SubmitIncident() {
           incident_type: detectedType,
           severity_score: 0.96,
         });
+
+        // Broadcast acute disaster warning to all registered citizens via AWS SNS
+        try {
+          await publishAwsAlert({
+            subject: `⚠️ DISASTER WARNING: Critical ${detectedType.toUpperCase()} Alert`,
+            message:
+              `EMERGENCY ALERT: High-severity ${detectedType.toUpperCase()} confirmed near ` +
+              `coordinates (${Number(latitude).toFixed(4)}, ${Number(longitude).toFixed(4)}).\n\n` +
+              `Description: ${description || "Acute disaster condition detected"}\n` +
+              `Confirmed Severity: 96.0%\n\n` +
+              `All registered citizens in this sector are advised to take shelter immediately. Emergency squads are mobilizing.`,
+          });
+        } catch (pubErr) {
+          console.warn("AWS SNS disaster alert broadcast skipped:", pubErr);
+        }
       } catch (syncErr) {
         console.warn("Backend sync notice:", syncErr);
       }

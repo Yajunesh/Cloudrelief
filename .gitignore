@@ -2,7 +2,9 @@
 .env
 
 # Python
+.venv/
 backend/.venv/
+.vscode/
 backend/__pycache__/
 **/__pycache__/
 *.pyc

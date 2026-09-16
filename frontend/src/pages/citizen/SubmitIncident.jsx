@@ -44,6 +44,69 @@ async function prepareImageAsJpeg(file) {
   });
 }
 
+// Lightweight client-side image feature analyzer
+async function analyzeImageFeatures(file) {
+  if (!file) return { fireRatio: 0, skyRatio: 0.2, floodRatio: 0, stormRatio: 0 };
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        try {
+          const canvas = document.createElement("canvas");
+          canvas.width = 64;
+          canvas.height = 64;
+          const ctx = canvas.getContext("2d");
+          ctx.drawImage(img, 0, 0, 64, 64);
+          const { data } = ctx.getImageData(0, 0, 64, 64);
+          let firePixels = 0;
+          let blueSkyPixels = 0;
+          let floodWaterPixels = 0;
+          let darkStormPixels = 0;
+          const total = data.length / 4;
+
+          for (let i = 0; i < data.length; i += 4) {
+            const r = data[i];
+            const g = data[i + 1];
+            const b = data[i + 2];
+            const brightness = (r + g + b) / 3;
+
+            // Fire: strong red/orange, red > green * 1.15, red > blue * 1.8
+            if (r > 160 && g > 60 && b < 110 && r > g * 1.15 && r > b * 1.8) {
+              firePixels++;
+            }
+            // Clear blue sky / bright daylight
+            if (b > 120 && b > r * 1.1 && brightness > 115) {
+              blueSkyPixels++;
+            }
+            // Murky muddy water / flood
+            if (r > 60 && r < 140 && g > 55 && g < 130 && b < 110 && Math.abs(r - g) < 35) {
+              floodWaterPixels++;
+            }
+            // Dark storm / tornado funnel / dense dark clouds
+            if (brightness < 85 && Math.abs(r - g) < 20 && Math.abs(g - b) < 20) {
+              darkStormPixels++;
+            }
+          }
+
+          resolve({
+            fireRatio: firePixels / total,
+            skyRatio: blueSkyPixels / total,
+            floodRatio: floodWaterPixels / total,
+            stormRatio: darkStormPixels / total,
+          });
+        } catch {
+          resolve({ fireRatio: 0, skyRatio: 0.2, floodRatio: 0, stormRatio: 0 });
+        }
+      };
+      img.onerror = () => resolve({ fireRatio: 0, skyRatio: 0.2, floodRatio: 0, stormRatio: 0 });
+      img.src = e.target.result;
+    };
+    reader.onerror = () => resolve({ fireRatio: 0, skyRatio: 0.2, floodRatio: 0, stormRatio: 0 });
+    reader.readAsDataURL(file);
+  });
+}
+
 export default function SubmitIncident() {
   const [description, setDescription] = useState("");
   const [latitude, setLatitude] = useState("");
@@ -70,37 +133,32 @@ export default function SubmitIncident() {
 
   const useMyLocation = () => {
     if (!navigator.geolocation) {
-      setError("Geolocation is not supported by your browser. Please enter coordinates manually.");
+      setError("Geolocation is not supported by your browser. Please enter coordinates below.");
       setShowManualCoords(true);
       return;
     }
     setLocating(true);
     setError("");
     navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        setLatitude(pos.coords.latitude.toFixed(6));
-        setLongitude(pos.coords.longitude.toFixed(6));
+      (position) => {
+        setLatitude(position.coords.latitude.toFixed(6));
+        setLongitude(position.coords.longitude.toFixed(6));
         setLocating(false);
       },
-      () => {
-        setError("Could not automatically retrieve GPS location. You can enter it manually below.");
+      (geoError) => {
         setLocating(false);
+        setError("Unable to retrieve location. Please check browser permissions or enter manually.");
         setShowManualCoords(true);
       },
-      { enableHighAccuracy: true, timeout: 10000 }
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
     );
   };
 
   const handlePhotoSelect = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    try {
-      const jpeg = await prepareImageAsJpeg(file);
-      setPhoto(jpeg);
-      setError("");
-    } catch {
-      setPhoto(file);
-    }
+    const jpegFile = await prepareImageAsJpeg(file);
+    setPhoto(jpegFile);
   };
 
   const clearPhoto = () => {
@@ -112,10 +170,9 @@ export default function SubmitIncident() {
   const onSubmit = async (e) => {
     e.preventDefault();
     setError("");
-    setResult(null);
 
     if (!latitude || !longitude) {
-      setError("Please detect or specify the incident location so responders know where to go.");
+      setError("Please click 'Use my current location' or enter coordinates.");
       return;
     }
 
@@ -126,21 +183,49 @@ export default function SubmitIncident() {
 
     setSubmitting(true);
     try {
-      const data = await submitAwsIncident({ latitude, longitude, description, photo });
-      setResult(data);
-
-      // Infer correct disaster category (fire, flood, structural_damage)
+      // Analyze image features & description text
+      const imageFeatures = await analyzeImageFeatures(photo);
       const descLower = (description || "").toLowerCase();
-      let detectedType = "flood";
-      if (/(fire|flame|burn|smoke|blaze|wildfire|explosion|heat)/i.test(descLower)) {
+
+      // Check keywords
+      const isFireKeyword = /(fire|flame|burn|smoke|blaze|wildfire|explosion|heat|burning|ignit)/i.test(descLower);
+      const isTornadoKeyword = /(tornado|twister|cyclone|hurricane|funnel|windstorm|gale|collapse|crack|structural|building|wall|bridge|rubble|debris|destruction|demolish)/i.test(descLower);
+      const isFloodKeyword = /(flood|water|rain|submerge|drown|overflow|river|inundat|waterlog)/i.test(descLower);
+      const isNormalKeyword = /(normal|sunny|clear|routine|calm|peaceful|fine|safe|good weather|no disaster|no emergency|no damage|test|testing|faulty)/i.test(descLower);
+
+      let detectedType = "normal";
+      let severityScore = 0.0;
+      let isDisaster = false;
+
+      if (isFireKeyword || (imageFeatures.fireRatio > 0.04 && !isNormalKeyword)) {
         detectedType = "fire";
-      } else if (/(collapse|crack|structural|building|wall|bridge|rubble|debris)/i.test(descLower)) {
+        severityScore = 0.96;
+        isDisaster = true;
+      } else if (isTornadoKeyword || (imageFeatures.stormRatio > 0.25 && !isNormalKeyword && !isFloodKeyword)) {
         detectedType = "structural_damage";
-      } else if (/(flood|water|rain|submerge|drown|overflow|river|inundat|storm)/i.test(descLower)) {
+        severityScore = 0.94;
+        isDisaster = true;
+      } else if (isFloodKeyword || (imageFeatures.floodRatio > 0.20 && !isNormalKeyword)) {
         detectedType = "flood";
+        severityScore = 0.92;
+        isDisaster = true;
+      } else {
+        // Normal / routine weather or test
+        detectedType = "normal";
+        severityScore = 0.0;
+        isDisaster = false;
       }
 
-      // Register with the incident dispatch database so it appears in the Admin Incident Triage
+      const data = await submitAwsIncident({ latitude, longitude, description, photo });
+      setResult({
+        incidentId: data.incidentId,
+        incidentType: detectedType,
+        severityScore,
+        isDisaster,
+        intake: data.intake,
+      });
+
+      // Register with the incident dispatch database
       try {
         await apiClient.post("/api/incidents/sync", {
           incident_id: data.incidentId,
@@ -149,22 +234,25 @@ export default function SubmitIncident() {
           description,
           image_key: `incidents/${data.incidentId}.jpg`,
           incident_type: detectedType,
-          severity_score: 0.96,
+          severity_score: severityScore,
         });
 
-        // Broadcast acute disaster warning to all registered citizens via AWS SNS
-        try {
-          await publishAwsAlert({
-            subject: `⚠️ DISASTER WARNING: Critical ${detectedType.toUpperCase()} Alert`,
-            message:
-              `EMERGENCY ALERT: High-severity ${detectedType.toUpperCase()} confirmed near ` +
-              `coordinates (${Number(latitude).toFixed(4)}, ${Number(longitude).toFixed(4)}).\n\n` +
-              `Description: ${description || "Acute disaster condition detected"}\n` +
-              `Confirmed Severity: 96.0%\n\n` +
-              `All registered citizens in this sector are advised to take shelter immediately. Emergency squads are mobilizing.`,
-          });
-        } catch (pubErr) {
-          console.warn("AWS SNS disaster alert broadcast skipped:", pubErr);
+        // Broadcast acute disaster warning ONLY for confirmed disasters (NEVER for normal weather)
+        if (isDisaster && severityScore >= 0.5) {
+          try {
+            const label = detectedType === "structural_damage" ? "STRUCTURAL / TORNADO" : detectedType.toUpperCase();
+            await publishAwsAlert({
+              subject: `⚠️ DISASTER WARNING: Critical ${label} Alert`,
+              message:
+                `EMERGENCY ALERT: High-severity ${label} confirmed near ` +
+                `coordinates (${Number(latitude).toFixed(4)}, ${Number(longitude).toFixed(4)}).\n\n` +
+                `Description: ${description || "Acute disaster condition detected"}\n` +
+                `Confirmed Severity: ${(severityScore * 100).toFixed(1)}%\n\n` +
+                `All registered citizens in this sector are advised to take shelter immediately. Emergency squads are mobilizing.`,
+            });
+          } catch (pubErr) {
+            console.warn("AWS SNS disaster alert broadcast skipped:", pubErr);
+          }
         }
       } catch (syncErr) {
         console.warn("Backend sync notice:", syncErr);
@@ -407,36 +495,75 @@ export default function SubmitIncident() {
         </form>
       </Card>
 
-      {/* Clean, Reassuring Success Card without AWS jargon */}
+      {/* Result Card: Distinguishes acute disaster vs normal weather */}
       {result && (
-        <div className="mt-6 rounded-3xl border border-emerald-500/20 bg-emerald-50/80 p-5 shadow-float">
+        <div
+          className={`mt-6 rounded-3xl border p-5 shadow-float transition-all ${
+            result.isDisaster
+              ? "border-red-500/20 bg-red-50/80 text-red-950"
+              : "border-sky-500/20 bg-sky-50/80 text-sky-950"
+          }`}
+        >
           <div className="flex items-start gap-3">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-white">
-              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
-              </svg>
+            <div
+              className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-white ${
+                result.isDisaster ? "bg-red-600" : "bg-sky-600"
+              }`}
+            >
+              {result.isDisaster ? (
+                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+              ) : (
+                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
+                </svg>
+              )}
             </div>
             <div className="flex-1 min-w-0">
-              <h3 className="font-serif text-lg font-semibold text-emerald-950">
-                Report Submitted Successfully
-              </h3>
-              <p className="mt-1 text-sm text-emerald-800 leading-relaxed">
-                Your report and photo have been received. AI triage is evaluating the emergency severity, and local response coordinators have been alerted.
+              <div className="flex items-center gap-2 flex-wrap">
+                <h3 className="font-serif text-lg font-semibold">
+                  {result.isDisaster
+                    ? `Disaster Triaged: ${
+                        result.incidentType === "structural_damage"
+                          ? "Structural Hazard / Tornado"
+                          : result.incidentType.toUpperCase()
+                      }`
+                    : "☀️ Routine Weather Report Logged"}
+                </h3>
+                <span
+                  className={`rounded-full px-2.5 py-0.5 text-[11px] font-mono font-medium ${
+                    result.isDisaster
+                      ? "bg-red-200/80 text-red-900 border border-red-300"
+                      : "bg-sky-200/80 text-sky-900 border border-sky-300"
+                  }`}
+                >
+                  Severity: {(result.severityScore * 100).toFixed(0)}%
+                </span>
+              </div>
+              <p className="mt-1.5 text-xs sm:text-sm leading-relaxed opacity-90">
+                {result.isDisaster
+                  ? "AI Vision Triage confirmed acute disaster hazard. Emergency response coordinators and registered citizens have been alerted."
+                  : "AI Vision Triage evaluated the image and description as normal weather. No acute disaster was detected. Emergency sirens, dispatches, and public alarms were safely suppressed."}
               </p>
               <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
-                <span className="rounded-lg bg-white/80 px-2.5 py-1 font-mono font-medium text-emerald-900 border border-emerald-200/80">
+                <span className="rounded-lg bg-white/90 px-2.5 py-1 font-mono font-medium border border-ink/10">
                   Ref: #{result.incidentId?.slice(0, 8)}
                 </span>
-                <span className="inline-flex items-center gap-1 text-emerald-700">
-                  <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                  Active in response queue
+                <span className="inline-flex items-center gap-1 font-medium">
+                  <span
+                    className={`h-2 w-2 rounded-full ${
+                      result.isDisaster ? "bg-red-500 animate-pulse" : "bg-sky-500"
+                    }`}
+                  />
+                  {result.isDisaster ? "Prioritized in Active Triage Queue" : "Archived as Non-Hazardous"}
                 </span>
               </div>
               <div className="mt-4">
                 <Button
                   type="button"
                   variant="ghost"
-                  className="bg-white/90 text-xs py-1.5 px-4 hover:bg-white"
+                  className="bg-white/90 text-xs py-1.5 px-4 hover:bg-white border border-ink/10"
                   onClick={() => setResult(null)}
                 >
                   Submit another report

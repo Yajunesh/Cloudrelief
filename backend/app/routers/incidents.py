@@ -159,17 +159,40 @@ def sync_aws_incident(
         return _to_out(existing)
 
     desc = (payload.description or "").lower()
+    
+    # 1. Check for normal/benign indicators
+    is_normal = (
+        payload.incident_type.lower() == "normal"
+        or any(k in desc for k in [
+            "normal", "sunny", "clear", "calm", "peaceful", "fine", "safe",
+            "routine", "pleasant", "good weather", "no disaster", "no damage",
+            "no emergency", "test", "testing", "faulty"
+        ])
+    )
+
+    # 2. Match disaster patterns
     if any(k in desc for k in ["fire", "flame", "burn", "smoke", "blaze", "wildfire", "explosion"]):
         itype = IncidentType.fire
-    elif any(k in desc for k in ["collapse", "crack", "structural", "building", "wall", "rubble", "debris"]):
+        severity = payload.severity_score if payload.severity_score > 0 else 0.96
+    elif any(k in desc for k in [
+        "tornado", "twister", "cyclone", "hurricane", "funnel", "windstorm", "gale",
+        "collapse", "crack", "structural", "building", "wall", "bridge", "rubble", "debris", "ruin"
+    ]):
         itype = IncidentType.structural_damage
-    elif any(k in desc for k in ["flood", "water", "rain", "submerge", "overflow", "river", "inundat"]):
+        severity = payload.severity_score if payload.severity_score > 0 else 0.94
+    elif any(k in desc for k in ["flood", "water", "rain", "submerge", "overflow", "river", "inundat", "waterlog", "drown"]):
         itype = IncidentType.flood
+        severity = payload.severity_score if payload.severity_score > 0 else 0.92
+    elif is_normal:
+        itype = IncidentType.normal
+        severity = 0.0
     else:
         try:
             itype = IncidentType(payload.incident_type.lower())
+            severity = 0.0 if itype == IncidentType.normal else payload.severity_score
         except ValueError:
-            itype = IncidentType.fire
+            itype = IncidentType.normal
+            severity = 0.0
 
     incident = Incident(
         incident_id=payload.incident_id,
@@ -178,8 +201,8 @@ def sync_aws_incident(
         longitude=payload.longitude,
         description=payload.description,
         incident_type=itype,
-        classifier_confidence=0.96,
-        severity_score=payload.severity_score,
+        classifier_confidence=0.0 if itype == IncidentType.normal else 0.95,
+        severity_score=severity,
         status=IncidentStatus.unassigned,
         image_key=payload.image_key,
     )
@@ -187,8 +210,8 @@ def sync_aws_incident(
     db.commit()
     db.refresh(incident)
 
-    # Broadcast emergency disaster warning alert to all registered citizens if severe
-    if payload.severity_score >= 0.5:
+    # Broadcast emergency disaster warning alert ONLY if confirmed acute disaster
+    if itype != IncidentType.normal and incident.severity_score >= 0.5:
         notify = get_notify_service()
         notify.publish_alert(
             db,
@@ -197,7 +220,7 @@ def sync_aws_incident(
             message=(
                 f"⚠️ DISASTER WARNING: High-severity {itype.value.upper()} reported near "
                 f"({payload.latitude:.4f}, {payload.longitude:.4f}). "
-                f"AI Vision Triage confirmed acute hazard (Severity: {(payload.severity_score * 100):.1f}%). "
+                f"AI Vision Triage confirmed acute hazard (Severity: {(incident.severity_score * 100):.1f}%). "
                 f"All registered citizens are alerted."
             ),
         )

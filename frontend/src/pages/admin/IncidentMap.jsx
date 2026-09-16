@@ -35,8 +35,17 @@ export default function IncidentMap({ incidents, selectedIncident, onSelectIncid
         <div className="absolute top-3 left-14 z-[1000] flex items-center gap-2 rounded-full bg-ink/90 px-3.5 py-1.5 text-xs text-white shadow-lg backdrop-blur-md border border-white/10">
           <span className="flex h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
           <span>
-            Targeting: <strong>{selectedIncident.incident_type}</strong> (
-            {Number(selectedIncident.latitude).toFixed(4)}°, {Number(selectedIncident.longitude).toFixed(4)}°)
+            Targeting:{" "}
+            <strong>
+              {selectedIncident.incident_type === "structural_damage"
+                ? "🌪️ Structural / Tornado"
+                : selectedIncident.incident_type === "fire"
+                ? "🔥 Fire"
+                : selectedIncident.incident_type === "flood"
+                ? "🌊 Flood"
+                : selectedIncident.incident_type}
+            </strong>{" "}
+            ({Number(selectedIncident.latitude).toFixed(4)}°, {Number(selectedIncident.longitude).toFixed(4)}°)
           </span>
           <button
             type="button"

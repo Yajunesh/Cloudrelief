@@ -122,7 +122,15 @@ export default function IncidentTable({
                   <td className="px-5 py-3 font-medium capitalize text-ink">
                     <div className="flex items-center gap-1.5">
                       {isSelected && <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />}
-                      {incident.incident_type}
+                      <span className="inline-flex items-center gap-1 font-medium">
+                        {incident.incident_type === "structural_damage"
+                          ? "🌪️ Structural / Tornado"
+                          : incident.incident_type === "fire"
+                          ? "🔥 Fire"
+                          : incident.incident_type === "flood"
+                          ? "🌊 Flood"
+                          : `☀️ ${incident.incident_type}`}
+                      </span>
                     </div>
                   </td>
                   <td className="max-w-xs truncate px-5 py-3 text-graphite" title={incident.description}>

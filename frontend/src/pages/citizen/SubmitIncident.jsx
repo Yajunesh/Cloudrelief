@@ -191,26 +191,32 @@ export default function SubmitIncident() {
       const isFireKeyword = /(fire|flame|burn|smoke|blaze|wildfire|explosion|heat|burning|ignit)/i.test(descLower);
       const isTornadoKeyword = /(tornado|twister|cyclone|hurricane|funnel|windstorm|gale|collapse|crack|structural|building|wall|bridge|rubble|debris|destruction|demolish)/i.test(descLower);
       const isFloodKeyword = /(flood|water|rain|submerge|drown|overflow|river|inundat|waterlog)/i.test(descLower);
-      const isNormalKeyword = /(normal|sunny|clear|routine|calm|peaceful|fine|safe|good weather|no disaster|no emergency|no damage|test|testing|faulty)/i.test(descLower);
+      const isExplicitNormalDesc = /(sunny|clear sky|blue sky|good weather|pleasant weather|routine weather|peaceful|calm day|no disaster|no emergency)/i.test(descLower) && !/(fire|smoke|flood|water|tornado|storm|collapse|damage)/i.test(descLower);
 
       let detectedType = "normal";
       let severityScore = 0.0;
       let isDisaster = false;
 
-      if (isFireKeyword || (imageFeatures.fireRatio > 0.04 && !isNormalKeyword)) {
+      // 1. Fire: Detected either by fire keywords OR by visual fire pixels in the photo
+      if (isFireKeyword || imageFeatures.fireRatio > 0.035) {
         detectedType = "fire";
         severityScore = 0.96;
         isDisaster = true;
-      } else if (isTornadoKeyword || (imageFeatures.stormRatio > 0.25 && !isNormalKeyword && !isFloodKeyword)) {
+      }
+      // 2. Tornado / Structural Destruction: Detected by keywords OR by dark storm funnel / destruction pixels
+      else if (isTornadoKeyword || (imageFeatures.stormRatio > 0.22 && !isFloodKeyword)) {
         detectedType = "structural_damage";
         severityScore = 0.94;
         isDisaster = true;
-      } else if (isFloodKeyword || (imageFeatures.floodRatio > 0.20 && !isNormalKeyword)) {
+      }
+      // 3. Flood: Detected by flood keywords OR by murky flood water pixels
+      else if (isFloodKeyword || imageFeatures.floodRatio > 0.18) {
         detectedType = "flood";
         severityScore = 0.92;
         isDisaster = true;
-      } else {
-        // Normal / routine weather or test
+      }
+      // 4. Normal weather: Routine photo, clear skies, or benign conditions
+      else {
         detectedType = "normal";
         severityScore = 0.0;
         isDisaster = false;

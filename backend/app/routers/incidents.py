@@ -160,17 +160,7 @@ def sync_aws_incident(
 
     desc = (payload.description or "").lower()
     
-    # 1. Check for normal/benign indicators
-    is_normal = (
-        payload.incident_type.lower() == "normal"
-        or any(k in desc for k in [
-            "normal", "sunny", "clear", "calm", "peaceful", "fine", "safe",
-            "routine", "pleasant", "good weather", "no disaster", "no damage",
-            "no emergency", "test", "testing", "faulty"
-        ])
-    )
-
-    # 2. Match disaster patterns
+    # 1. Match description disaster keywords if present
     if any(k in desc for k in ["fire", "flame", "burn", "smoke", "blaze", "wildfire", "explosion"]):
         itype = IncidentType.fire
         severity = payload.severity_score if payload.severity_score > 0 else 0.96
@@ -183,13 +173,12 @@ def sync_aws_incident(
     elif any(k in desc for k in ["flood", "water", "rain", "submerge", "overflow", "river", "inundat", "waterlog", "drown"]):
         itype = IncidentType.flood
         severity = payload.severity_score if payload.severity_score > 0 else 0.92
-    elif is_normal:
-        itype = IncidentType.normal
-        severity = 0.0
     else:
+        # 2. If description has no disaster keywords (e.g. vague, faulty, or minimal text),
+        # rely on the AI/client vision triage supplied in payload.incident_type
         try:
             itype = IncidentType(payload.incident_type.lower())
-            severity = 0.0 if itype == IncidentType.normal else payload.severity_score
+            severity = 0.0 if itype == IncidentType.normal else (payload.severity_score or 0.90)
         except ValueError:
             itype = IncidentType.normal
             severity = 0.0

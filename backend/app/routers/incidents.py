@@ -14,6 +14,7 @@ from app.models.schemas import (
     IncidentOut,
     IncidentStatusRequest,
     IncidentSyncRequest,
+    IncidentTypeRequest,
     StatsOut,
 )
 from app.services.factory import get_classifier_service, get_notify_service, get_storage_service
@@ -303,6 +304,27 @@ def set_status(
         incident.status = IncidentStatus(payload.status)
     except ValueError:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Invalid status")
+
+    db.commit()
+    db.refresh(incident)
+    return _to_out(incident)
+
+
+@router.patch("/{incident_id}/type", response_model=IncidentOut)
+def set_type(
+    incident_id: str,
+    payload: IncidentTypeRequest,
+    db: Session = Depends(get_db),
+    _admin: User = Depends(require_admin),
+):
+    incident = db.query(Incident).filter(Incident.incident_id == incident_id).first()
+    if not incident:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Incident not found")
+
+    try:
+        incident.incident_type = IncidentType(payload.incident_type)
+    except ValueError:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Invalid incident type")
 
     db.commit()
     db.refresh(incident)

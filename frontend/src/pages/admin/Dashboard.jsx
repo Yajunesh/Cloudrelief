@@ -48,6 +48,11 @@ export default function Dashboard() {
     refresh();
   };
 
+  const handleTypeChange = async (incidentId, incident_type) => {
+    await apiClient.patch(`/api/incidents/${incidentId}/type`, { incident_type });
+    refresh();
+  };
+
   const [archiving, setArchiving] = useState(false);
 
   const handleArchive = async () => {
@@ -110,6 +115,7 @@ export default function Dashboard() {
         onSelectIncident={setSelectedIncident}
         onAssign={handleAssign}
         onStatusChange={handleStatusChange}
+        onTypeChange={handleTypeChange}
       />
     </div>
   );

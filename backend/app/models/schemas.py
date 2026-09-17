@@ -77,6 +77,10 @@ class IncidentStatusRequest(BaseModel):
     status: str  # unassigned | assigned | resolved
 
 
+class IncidentTypeRequest(BaseModel):
+    incident_type: str
+
+
 class StatsOut(BaseModel):
     total_incidents: int
     by_type: dict[str, int]

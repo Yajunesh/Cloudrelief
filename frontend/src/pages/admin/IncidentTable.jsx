@@ -119,21 +119,22 @@ export default function IncidentTable({
                     isSelected ? "bg-peach/30 border-l-4 border-l-ink" : ""
                   }`}
                 >
-                  <td className="px-5 py-3 font-medium capitalize text-ink">
+                  <td className="px-5 py-3 font-medium capitalize text-ink" onClick={(e) => e.stopPropagation()}>
                     <div className="flex flex-col gap-0.5">
                       <div className="flex items-center gap-1.5">
                         {isSelected && <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />}
-                        <span className="inline-flex items-center gap-1 font-bold text-[13px] tracking-wide">
-                          {incident.incident_type === "structural_damage"
-                            ? "🌪️ TORNADO / STRUCTURAL"
-                            : incident.incident_type === "fire"
-                            ? "🔥 FIRE"
-                            : incident.incident_type === "flood"
-                            ? "🌊 FLOOD"
-                            : `☀️ ${incident.incident_type.toUpperCase()}`}
-                        </span>
+                        <select
+                          className="bg-transparent font-bold text-[13px] tracking-wide outline-none cursor-pointer border-b border-dashed border-ink/20 hover:border-ink pb-0.5 appearance-none pr-4 relative"
+                          value={incident.incident_type}
+                          onChange={(e) => onTypeChange(incident.incident_id, e.target.value)}
+                        >
+                          <option value="fire">🔥 FIRE</option>
+                          <option value="flood">🌊 FLOOD</option>
+                          <option value="structural_damage">🌪️ TORNADO / STRUCTURAL</option>
+                          <option value="normal">☀️ NORMAL</option>
+                        </select>
                       </div>
-                      <span className="text-[9px] uppercase font-bold text-emerald-600 tracking-wider">✓ AI Verified</span>
+                      <span className="text-[9px] uppercase font-bold text-emerald-600 tracking-wider">✓ AI Verified (Override)</span>
                     </div>
                   </td>
                   <td className="max-w-xs px-5 py-3">

@@ -28,20 +28,21 @@ REKOGNITION_TO_INCIDENT_TYPE = {
 
 class RekognitionClassifierService(ClassifierService):
     def __init__(self):
-        self.client = boto3.client('rekognition', region_name='ap-south-2')
+        # S3 bucket is in Hyderabad (ap-south-2)
+        self.s3_client = boto3.client('s3', region_name='ap-south-2')
+        # Rekognition is in Mumbai (ap-south-1) because it's not available in Hyderabad
+        self.rek_client = boto3.client('rekognition', region_name='ap-south-1')
         self.bucket = "cloudrelief-images-hyderabad-2026"
 
     def classify_image(self, image_path: str) -> ClassificationResult:
-        # image_path is typically the S3 object key (e.g., 'incidents/1234-abcd.jpg')
-        # We assume the image is available in the bucket
         try:
-            response = self.client.detect_labels(
-                Image={
-                    'S3Object': {
-                        'Bucket': self.bucket,
-                        'Name': image_path
-                    }
-                },
+            # 1. Fetch the image bytes from S3 (cross-region Rekognition requires passing Bytes directly)
+            s3_response = self.s3_client.get_object(Bucket=self.bucket, Key=image_path)
+            image_bytes = s3_response['Body'].read()
+
+            # 2. Analyze the image with Rekognition
+            response = self.rek_client.detect_labels(
+                Image={'Bytes': image_bytes},
                 MaxLabels=10,
                 MinConfidence=50.0
             )

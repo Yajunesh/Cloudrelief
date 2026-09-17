@@ -501,7 +501,8 @@ export default function SubmitIncident() {
             className="w-full py-3 text-sm font-semibold tracking-wide"
           >
             {submitting ? "Submitting incident..." : "Submit Incident Report"}
-          </          </form>
+          </Button>
+        </form>
         </Card>
       </div>
 

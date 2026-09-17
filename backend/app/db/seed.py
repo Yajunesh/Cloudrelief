@@ -55,28 +55,6 @@ def seed():
         db.commit()
         db.refresh(citizen)
 
-        existing_count = db.query(Incident).count()
-        if existing_count == 0:
-            for lat, lng, incident_type, description in DEMO_INCIDENTS:
-                confidence = round(random.uniform(0.5, 0.95), 4)
-                severity = round(random.uniform(0.2, 0.9), 4)
-                status_choice = random.choice(list(IncidentStatus))
-                incident = Incident(
-                    citizen_id=citizen.user_id,
-                    latitude=lat,
-                    longitude=lng,
-                    description=description,
-                    incident_type=IncidentType(incident_type),
-                    classifier_confidence=confidence,
-                    severity_score=severity,
-                    status=status_choice,
-                    created_at=datetime.now(timezone.utc) - timedelta(hours=random.randint(0, 12)),
-                )
-                db.add(incident)
-            db.commit()
-            print(f"Seeded {len(DEMO_INCIDENTS)} demo incidents")
-        else:
-            print(f"Incidents already present ({existing_count}), skipping incident seed")
     finally:
         db.close()
 

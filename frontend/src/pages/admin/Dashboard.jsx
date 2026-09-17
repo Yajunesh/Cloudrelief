@@ -38,8 +38,6 @@ export default function Dashboard() {
     return () => clearInterval(id);
   }, []);
 
-  const [wiping, setWiping] = useState(false);
-
   const handleAssign = async (incidentId, team) => {
     await apiClient.patch(`/api/incidents/${incidentId}/assign`, { assigned_team: team });
     refresh();
@@ -50,17 +48,19 @@ export default function Dashboard() {
     refresh();
   };
 
-  const handleWipe = async () => {
-    if (!window.confirm("Wipe all mock reports and incidents from the command database?")) return;
-    setWiping(true);
+  const [archiving, setArchiving] = useState(false);
+
+  const handleArchive = async () => {
+    if (!window.confirm("Archive incidents older than 5 minutes to history?")) return;
+    setArchiving(true);
     try {
-      await apiClient.delete("/api/incidents/wipe");
+      await apiClient.post("/api/incidents/archive");
       setSelectedIncident(null);
       await refresh();
     } catch (err) {
-      setError(err.response?.data?.detail || "Failed to wipe incidents");
+      setError(err.response?.data?.detail || "Failed to archive incidents");
     } finally {
-      setWiping(false);
+      setArchiving(false);
     }
   };
 
@@ -76,11 +76,11 @@ export default function Dashboard() {
         <div className="flex flex-wrap items-center gap-2 text-sm text-graphite">
           <Button
             variant="ghost"
-            onClick={handleWipe}
-            disabled={wiping}
-            className="text-xs py-1.5 px-3 text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
+            onClick={handleArchive}
+            disabled={archiving}
+            className="text-xs py-1.5 px-3 text-ink hover:text-ink/80 hover:bg-mist/50 border-ink/20"
           >
-            {wiping ? "Wiping..." : "🗑️ Wipe Mock Data"}
+            {archiving ? "Archiving..." : "📦 Archive Old Incidents (> 5m)"}
           </Button>
           <span className="hidden sm:inline font-mono text-xs text-graphite">{user?.email}</span>
           <Button variant="ghost" onClick={logout} className="text-xs py-1.5 px-3">

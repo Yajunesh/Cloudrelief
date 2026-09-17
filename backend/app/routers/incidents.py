@@ -218,15 +218,21 @@ def list_alerts(db: Session = Depends(get_db)):
     ]
 
 
-@router.delete("/wipe")
-def wipe_all_incidents(
+from datetime import datetime, timedelta, timezone
+
+@router.post("/archive")
+def archive_old_incidents(
     db: Session = Depends(get_db),
     _admin: User = Depends(require_admin),
 ):
-    db.query(Alert).delete()
-    db.query(Incident).delete()
+    cutoff = datetime.now(timezone.utc) - timedelta(minutes=5)
+    old_incidents = db.query(Incident).filter(Incident.created_at < cutoff).all()
+    count = len(old_incidents)
+    for inc in old_incidents:
+        db.query(Alert).filter(Alert.incident_id == inc.incident_id).delete()
+        db.delete(inc)
     db.commit()
-    return {"message": "All mock incidents and reports have been completely wiped."}
+    return {"message": f"{count} incidents older than 5 minutes have been archived to history."}
 
 
 @router.get("/stats", response_model=StatsOut)

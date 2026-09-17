@@ -282,17 +282,21 @@ export default function SubmitIncident() {
   };
 
   return (
-    <div className="mx-auto mt-8 max-w-xl px-6 pb-16">
-      <div className="mb-6">
-        <h1 className="text-3xl font-serif tracking-tight text-ink">Report an incident</h1>
-        <p className="mt-1 text-sm text-graphite">
-          Provide immediate details and a photo so disaster response teams can triage and deploy aid.
-        </p>
-      </div>
+    <div className="mx-auto max-w-5xl px-4 py-8 sm:py-12">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        <div className="lg:col-span-7">
+          <Card className="p-6 sm:p-8 bg-white border-ink/[0.06] shadow-float">
+            <div className="mb-6">
+              <h2 className="text-2xl sm:text-3xl font-serif tracking-tight text-ink">
+                Report an Incident
+              </h2>
+              <p className="mt-1 text-xs text-graphite">
+                Your report helps direct emergency rescue squads. Location and photo are required.
+              </p>
+            </div>
 
-      <Card className="shadow-float">
-        <form onSubmit={onSubmit} className="space-y-5">
-          {/* Description */}
+          <form onSubmit={onSubmit} className="space-y-5">
+            {/* Description */}
           <Field label="What is happening?">
             <TextArea
               rows={3}
@@ -497,88 +501,108 @@ export default function SubmitIncident() {
             className="w-full py-3 text-sm font-semibold tracking-wide"
           >
             {submitting ? "Submitting incident..." : "Submit Incident Report"}
-          </Button>
-        </form>
-      </Card>
+          </          </form>
+        </Card>
+      </div>
 
       {/* Result Card: Distinguishes acute disaster vs normal weather */}
-      {result && (
-        <div
-          className={`mt-6 rounded-3xl border p-5 shadow-float transition-all ${
-            result.isDisaster
-              ? "border-red-500/20 bg-red-50/80 text-red-950"
-              : "border-sky-500/20 bg-sky-50/80 text-sky-950"
-          }`}
-        >
-          <div className="flex items-start gap-3">
-            <div
-              className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-white ${
-                result.isDisaster ? "bg-red-600" : "bg-sky-600"
-              }`}
-            >
-              {result.isDisaster ? (
-                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                </svg>
-              ) : (
-                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
-                </svg>
-              )}
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 flex-wrap">
-                <h3 className="font-serif text-lg font-semibold">
-                  {result.isDisaster
-                    ? `Disaster Triaged: ${
-                        result.incidentType === "structural_damage"
-                          ? "Structural Hazard / Tornado"
-                          : result.incidentType.toUpperCase()
-                      }`
-                    : "☀️ Routine Weather Report Logged"}
-                </h3>
-                <span
-                  className={`rounded-full px-2.5 py-0.5 text-[11px] font-mono font-medium ${
-                    result.isDisaster
-                      ? "bg-red-200/80 text-red-900 border border-red-300"
-                      : "bg-sky-200/80 text-sky-900 border border-sky-300"
-                  }`}
-                >
-                  Severity: {(result.severityScore * 100).toFixed(0)}%
-                </span>
+      <div className="lg:col-span-5 flex flex-col gap-6">
+        {result ? (
+          <div
+            className={`rounded-3xl border p-5 shadow-float transition-all ${
+              result.isDisaster
+                ? "border-red-500/20 bg-red-50/80 text-red-950"
+                : "border-sky-500/20 bg-sky-50/80 text-sky-950"
+            }`}
+          >
+            <div className="flex items-start gap-3">
+              <div
+                className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-white ${
+                  result.isDisaster ? "bg-red-600" : "bg-sky-600"
+                }`}
+              >
+                {result.isDisaster ? (
+                  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                ) : (
+                  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
+                  </svg>
+                )}
               </div>
-              <p className="mt-1.5 text-xs sm:text-sm leading-relaxed opacity-90">
-                {result.isDisaster
-                  ? "AI Vision Triage confirmed acute disaster hazard. Emergency response coordinators and registered citizens have been alerted."
-                  : "AI Vision Triage evaluated the image and description as normal weather. No acute disaster was detected. Emergency sirens, dispatches, and public alarms were safely suppressed."}
-              </p>
-              <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
-                <span className="rounded-lg bg-white/90 px-2.5 py-1 font-mono font-medium border border-ink/10">
-                  Ref: #{result.incidentId?.slice(0, 8)}
-                </span>
-                <span className="inline-flex items-center gap-1 font-medium">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h3 className="font-serif text-lg font-semibold">
+                    {result.isDisaster
+                      ? `Disaster Triaged: ${
+                          result.incidentType === "structural_damage"
+                            ? "Structural Hazard / Tornado"
+                            : result.incidentType.toUpperCase()
+                        }`
+                      : "☀️ Routine Weather Report Logged"}
+                  </h3>
                   <span
-                    className={`h-2 w-2 rounded-full ${
-                      result.isDisaster ? "bg-red-500 animate-pulse" : "bg-sky-500"
+                    className={`rounded-full px-2.5 py-0.5 text-[11px] font-mono font-medium ${
+                      result.isDisaster
+                        ? "bg-red-200/80 text-red-900 border border-red-300"
+                        : "bg-sky-200/80 text-sky-900 border border-sky-300"
                     }`}
-                  />
-                  {result.isDisaster ? "Prioritized in Active Triage Queue" : "Archived as Non-Hazardous"}
-                </span>
-              </div>
-              <div className="mt-4">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  className="bg-white/90 text-xs py-1.5 px-4 hover:bg-white border border-ink/10"
-                  onClick={() => setResult(null)}
-                >
-                  Submit another report
-                </Button>
+                  >
+                    Severity: {(result.severityScore * 100).toFixed(0)}%
+                  </span>
+                </div>
+                <p className="mt-1.5 text-xs sm:text-sm leading-relaxed opacity-90">
+                  {result.isDisaster
+                    ? "AI Vision Triage confirmed acute disaster hazard. Emergency response coordinators and registered citizens have been alerted."
+                    : "AI Vision Triage evaluated the image and description as normal weather. No acute disaster was detected. Emergency sirens, dispatches, and public alarms were safely suppressed."}
+                </p>
+                <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
+                  <span className="rounded-lg bg-white/90 px-2.5 py-1 font-mono font-medium border border-ink/10">
+                    Ref: #{result.incidentId?.slice(0, 8)}
+                  </span>
+                  <span className="inline-flex items-center gap-1 font-medium">
+                    <span
+                      className={`h-2 w-2 rounded-full ${
+                        result.isDisaster ? "bg-red-500 animate-pulse" : "bg-sky-500"
+                      }`}
+                    />
+                    {result.isDisaster ? "Prioritized in Active Triage Queue" : "Archived as Non-Hazardous"}
+                  </span>
+                </div>
+                <div className="mt-4">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    className="bg-white/90 text-xs py-1.5 px-4 hover:bg-white border border-ink/10"
+                    onClick={() => setResult(null)}
+                  >
+                    Submit another report
+                  </Button>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        ) : (
+          <div className="rounded-3xl border border-ink/[0.06] bg-fog p-6 text-sm text-graphite shadow-sm">
+            <h3 className="font-serif text-lg font-semibold text-ink mb-2">How it works</h3>
+            <p className="mb-4">
+              Your submission is instantly processed by AWS Rekognition. AI Vision triage evaluates the severity of the hazard in real-time.
+            </p>
+            <ul className="space-y-3">
+              <li className="flex items-start gap-2">
+                <span className="text-emerald-500 mt-0.5">✓</span>
+                <span>Routine weather submissions are safely archived to prevent false alarms.</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-red-500 mt-0.5">⚠️</span>
+                <span>Critical disasters instantly alert all subscribed citizens and prioritize deployment for rescue squads.</span>
+              </li>
+            </ul>
+          </div>
+        )}
+      </div>
+      </div>
     </div>
   );
 }

@@ -37,14 +37,14 @@ export function Field({ label, children }) {
 }
 
 const inputClasses =
-  "w-full rounded-2xl border border-ink/10 bg-paper px-4 py-2.5 text-sm text-ink placeholder:text-smoke outline-none transition-colors focus:border-ink/40";
+  "w-full rounded-2xl border border-ink/15 bg-paper px-4 py-3 text-sm text-ink placeholder:text-graphite/40 outline-none transition-all focus:border-ink/60 focus:ring-2 focus:ring-ink/5";
 
-export function Input(props) {
-  return <input className={inputClasses} {...props} />;
+export function Input({ className = "", ...props }) {
+  return <input className={`${inputClasses} ${className}`} {...props} />;
 }
 
-export function TextArea(props) {
-  return <textarea className={inputClasses} {...props} />;
+export function TextArea({ className = "", ...props }) {
+  return <textarea className={`${inputClasses} ${className}`} {...props} />;
 }
 
 export function Eyebrow({ children, className = "" }) {

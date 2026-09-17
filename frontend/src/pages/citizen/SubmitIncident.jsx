@@ -183,86 +183,41 @@ export default function SubmitIncident() {
 
     setSubmitting(true);
     try {
-      // Analyze image features & description text
-      const imageFeatures = await analyzeImageFeatures(photo);
-      const descLower = (description || "").toLowerCase();
-
-      // Check keywords
-      const isFireKeyword = /(fire|flame|burn|smoke|blaze|wildfire|explosion|heat|burning|ignit)/i.test(descLower);
-      const isTornadoKeyword = /(tornado|twister|cyclone|hurricane|funnel|windstorm|gale|collapse|crack|structural|building|wall|bridge|rubble|debris|destruction|demolish)/i.test(descLower);
-      const isFloodKeyword = /(flood|water|rain|submerge|drown|overflow|river|inundat|waterlog)/i.test(descLower);
-      const isExplicitNormalDesc = /(sunny|clear sky|blue sky|good weather|pleasant weather|routine weather|peaceful|calm day|no disaster|no emergency)/i.test(descLower) && !/(fire|smoke|flood|water|tornado|storm|collapse|damage)/i.test(descLower);
-
-      let detectedType = "normal";
-      let severityScore = 0.0;
-      let isDisaster = false;
-
-      // 1. Fire: Detected either by fire keywords OR by visual fire pixels in the photo
-      if (isFireKeyword || imageFeatures.fireRatio > 0.035) {
-        detectedType = "fire";
-        severityScore = 0.96;
-        isDisaster = true;
-      }
-      // 2. Tornado / Structural Destruction: Detected by keywords OR by dark storm funnel / destruction pixels
-      else if (isTornadoKeyword || (imageFeatures.stormRatio > 0.22 && !isFloodKeyword)) {
-        detectedType = "structural_damage";
-        severityScore = 0.94;
-        isDisaster = true;
-      }
-      // 3. Flood: Detected by flood keywords OR by murky flood water pixels
-      else if (isFloodKeyword || imageFeatures.floodRatio > 0.18) {
-        detectedType = "flood";
-        severityScore = 0.92;
-        isDisaster = true;
-      }
-      // 4. Normal weather: Routine photo, clear skies, or benign conditions
-      else {
-        detectedType = "normal";
-        severityScore = 0.0;
-        isDisaster = false;
-      }
-
+      // 1. Submit to AWS Intake (uploads image to S3)
       const data = await submitAwsIncident({ latitude, longitude, description, photo });
-      setResult({
-        incidentId: data.incidentId,
-        incidentType: detectedType,
-        severityScore,
-        isDisaster,
-        intake: data.intake,
-      });
-
-      // Register with the incident dispatch database
+      
+      // 2. Sync with Backend to trigger REAL AWS Rekognition analysis
+      let syncResult;
       try {
-        await apiClient.post("/api/incidents/sync", {
+        const res = await apiClient.post("/api/incidents/sync", {
           incident_id: data.incidentId,
           latitude: Number(latitude),
           longitude: Number(longitude),
           description,
           image_key: `incidents/${data.incidentId}.jpg`,
-          incident_type: detectedType,
-          severity_score: severityScore,
+          // We pass empty values here; the backend will ignore them and use Rekognition
+          incident_type: "unknown",
+          severity_score: 0.0,
         });
-
-        // Broadcast acute disaster warning ONLY for confirmed disasters (NEVER for normal weather)
-        if (isDisaster && severityScore >= 0.5) {
-          try {
-            const label = detectedType === "structural_damage" ? "STRUCTURAL / TORNADO" : detectedType.toUpperCase();
-            await publishAwsAlert({
-              subject: `⚠️ DISASTER WARNING: Critical ${label} Alert`,
-              message:
-                `EMERGENCY ALERT: High-severity ${label} confirmed near ` +
-                `coordinates (${Number(latitude).toFixed(4)}, ${Number(longitude).toFixed(4)}).\n\n` +
-                `Description: ${description || "Acute disaster condition detected"}\n` +
-                `Confirmed Severity: ${(severityScore * 100).toFixed(1)}%\n\n` +
-                `All registered citizens in this sector are advised to take shelter immediately. Emergency squads are mobilizing.`,
-            });
-          } catch (pubErr) {
-            console.warn("AWS SNS disaster alert broadcast skipped:", pubErr);
-          }
-        }
+        syncResult = res.data;
       } catch (syncErr) {
         console.warn("Backend sync notice:", syncErr);
+        throw new Error("Failed to analyze image using AWS Rekognition.");
       }
+
+      // 3. Use the REAL data from the backend's AWS Rekognition triage
+      const isDisaster = syncResult.incident_type !== "normal";
+      
+      setResult({
+        incidentId: syncResult.incident_id,
+        incidentType: syncResult.incident_type,
+        severityScore: syncResult.severity_score,
+        isDisaster,
+        intake: data.intake,
+      });
+
+      // The backend handles the SNS disaster alert broadcast during the /sync call, 
+      // so we don't need to do it here anymore.
 
       // Reset all form inputs and location state
       setDescription("");

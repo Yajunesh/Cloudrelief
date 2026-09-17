@@ -96,8 +96,8 @@ export default function IncidentTable({
         <table className="w-full text-left text-sm">
           <thead className="text-xs uppercase tracking-tight text-graphite bg-fog/50">
             <tr>
-              <th className="px-5 py-3 font-medium">Type</th>
-              <th className="px-5 py-3 font-medium">Description</th>
+              <th className="px-5 py-3 font-medium">AI Vision Classification</th>
+              <th className="px-5 py-3 font-medium">Citizen Report (Unverified)</th>
               <th className="px-5 py-3 font-medium">Coordinates</th>
               <th className="px-5 py-3 font-medium">Severity</th>
               <th className="px-5 py-3 font-medium">Status</th>
@@ -120,21 +120,29 @@ export default function IncidentTable({
                   }`}
                 >
                   <td className="px-5 py-3 font-medium capitalize text-ink">
-                    <div className="flex items-center gap-1.5">
-                      {isSelected && <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />}
-                      <span className="inline-flex items-center gap-1 font-medium">
-                        {incident.incident_type === "structural_damage"
-                          ? "🌪️ Structural / Tornado"
-                          : incident.incident_type === "fire"
-                          ? "🔥 Fire"
-                          : incident.incident_type === "flood"
-                          ? "🌊 Flood"
-                          : `☀️ ${incident.incident_type}`}
-                      </span>
+                    <div className="flex flex-col gap-0.5">
+                      <div className="flex items-center gap-1.5">
+                        {isSelected && <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />}
+                        <span className="inline-flex items-center gap-1 font-bold text-[13px] tracking-wide">
+                          {incident.incident_type === "structural_damage"
+                            ? "🌪️ TORNADO / STRUCTURAL"
+                            : incident.incident_type === "fire"
+                            ? "🔥 FIRE"
+                            : incident.incident_type === "flood"
+                            ? "🌊 FLOOD"
+                            : `☀️ ${incident.incident_type.toUpperCase()}`}
+                        </span>
+                      </div>
+                      <span className="text-[9px] uppercase font-bold text-emerald-600 tracking-wider">✓ AI Verified</span>
                     </div>
                   </td>
-                  <td className="max-w-xs truncate px-5 py-3 text-graphite" title={incident.description}>
-                    {incident.description}
+                  <td className="max-w-xs px-5 py-3">
+                    <p className="truncate text-graphite" title={incident.description}>
+                      {incident.description}
+                    </p>
+                    <p className="text-[9px] uppercase font-bold text-ink/30 tracking-wider mt-0.5">
+                      Unverified Text
+                    </p>
                   </td>
                   <td className="whitespace-nowrap px-5 py-3 text-xs font-mono text-graphite">
                     {Number(incident.latitude).toFixed(4)}°, {Number(incident.longitude).toFixed(4)}°

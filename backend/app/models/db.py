@@ -48,6 +48,10 @@ class IncidentType(str, enum.Enum):
     flood = "flood"
     fire = "fire"
     structural_damage = "structural_damage"
+    cyclone = "cyclone"
+    tsunami = "tsunami"
+    tornado = "tornado"
+    earthquake = "earthquake"
     normal = "normal"
 
 

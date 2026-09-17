@@ -158,30 +158,16 @@ def sync_aws_incident(
     if existing:
         return _to_out(existing)
 
-    desc = (payload.description or "").lower()
-    
-    # 1. Match description disaster keywords if present
-    if any(k in desc for k in ["fire", "flame", "burn", "smoke", "blaze", "wildfire", "explosion"]):
-        itype = IncidentType.fire
-        severity = payload.severity_score if payload.severity_score > 0 else 0.96
-    elif any(k in desc for k in [
-        "tornado", "twister", "cyclone", "hurricane", "funnel", "windstorm", "gale",
-        "collapse", "crack", "structural", "building", "wall", "bridge", "rubble", "debris", "ruin"
-    ]):
-        itype = IncidentType.structural_damage
-        severity = payload.severity_score if payload.severity_score > 0 else 0.94
-    elif any(k in desc for k in ["flood", "water", "rain", "submerge", "overflow", "river", "inundat", "waterlog", "drown"]):
-        itype = IncidentType.flood
-        severity = payload.severity_score if payload.severity_score > 0 else 0.92
-    else:
-        # 2. If description has no disaster keywords (e.g. vague, faulty, or minimal text),
-        # rely on the AI/client vision triage supplied in payload.incident_type
-        try:
-            itype = IncidentType(payload.incident_type.lower())
-            severity = 0.0 if itype == IncidentType.normal else (payload.severity_score or 0.90)
-        except ValueError:
-            itype = IncidentType.normal
-            severity = 0.0
+    # 1. Image analysis via AWS Rekognition (ignore description text for classification)
+    classifier = get_classifier_service()
+    classification = classifier.classify_image(payload.image_key)
+
+    try:
+        itype = IncidentType(classification.label)
+    except ValueError:
+        itype = IncidentType.normal
+
+    severity = 0.0 if itype == IncidentType.normal else classification.confidence
 
     incident = Incident(
         incident_id=payload.incident_id,
@@ -190,7 +176,7 @@ def sync_aws_incident(
         longitude=payload.longitude,
         description=payload.description,
         incident_type=itype,
-        classifier_confidence=0.0 if itype == IncidentType.normal else 0.95,
+        classifier_confidence=classification.confidence,
         severity_score=severity,
         status=IncidentStatus.unassigned,
         image_key=payload.image_key,
@@ -209,7 +195,7 @@ def sync_aws_incident(
             message=(
                 f"⚠️ DISASTER WARNING: High-severity {itype.value.upper()} reported near "
                 f"({payload.latitude:.4f}, {payload.longitude:.4f}). "
-                f"AI Vision Triage confirmed acute hazard (Severity: {(incident.severity_score * 100):.1f}%). "
+                f"AWS Vision Triage confirmed acute hazard (Severity: {(incident.severity_score * 100):.1f}%). "
                 f"All registered citizens are alerted."
             ),
         )

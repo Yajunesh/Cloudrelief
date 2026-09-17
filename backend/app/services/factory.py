@@ -60,7 +60,7 @@ def get_notify_service() -> NotifyService:
 def get_classifier_service() -> ClassifierService:
     if settings.CLASSIFIER_PROVIDER == "mock":
         return MockClassifierService()
-    # elif settings.CLASSIFIER_PROVIDER == "rekognition":
-    #     from app.services.classifier.rekognition import RekognitionClassifierService
-    #     return RekognitionClassifierService()
+    elif settings.CLASSIFIER_PROVIDER == "rekognition":
+        from app.services.classifier.rekognition import RekognitionClassifierService
+        return RekognitionClassifierService()
     raise ValueError(f"Unknown CLASSIFIER_PROVIDER: {settings.CLASSIFIER_PROVIDER}")

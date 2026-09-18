@@ -58,9 +58,10 @@ def get_notify_service() -> NotifyService:
 
 @lru_cache
 def get_classifier_service() -> ClassifierService:
-    if settings.CLASSIFIER_PROVIDER == "mock":
+    provider = settings.CLASSIFIER_PROVIDER.strip().lower().strip('\'"')
+    if provider == "mock":
         return MockClassifierService()
-    elif settings.CLASSIFIER_PROVIDER == "rekognition":
+    elif provider == "rekognition":
         from app.services.classifier.rekognition import RekognitionClassifierService
         return RekognitionClassifierService()
     raise ValueError(f"Unknown CLASSIFIER_PROVIDER: {settings.CLASSIFIER_PROVIDER}")
